@@ -1,5 +1,5 @@
-sentence-transformers
 streamlit
+sentence-transformers
 faiss-cpu
 langchain
 PyPDF2
