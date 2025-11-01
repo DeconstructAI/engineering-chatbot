@@ -18,7 +18,7 @@ EMBED_FILE = os.path.join(DATA_DIR, "embeddings.index")
 TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- Load existing data if available ---
 def load_existing_data():
