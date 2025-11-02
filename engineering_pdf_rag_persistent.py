@@ -101,13 +101,25 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     relevant_chunks = retrieve_chunks(user_query)
     context = "\n\n".join(relevant_chunks)
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
-            {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
-        ]
-    )
+    # Try using GPT-4, fallback to GPT-3.5 if GPT-4 is not available
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",  # Try using GPT-4 first
+            messages=[
+                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
+            ]
+        )
+    except openai.error.InvalidRequestError as e:
+        # Fallback to GPT-3.5 if GPT-4 is not available
+        st.warning("⚠️ GPT-4 is unavailable, falling back to GPT-3.5...")
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Use GPT-3.5 as fallback
+            messages=[
+                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
+            ]
+        )
 
     answer = response.choices[0].message.content
     st.chat_message("assistant").write(answer)
