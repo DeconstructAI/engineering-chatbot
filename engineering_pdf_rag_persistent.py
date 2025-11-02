@@ -102,16 +102,14 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     context = "\n\n".join(relevant_chunks)
 
     try:
-        # Using the correct method for OpenAI v1.0.0 or later
-        response = openai.ChatCompletion.create(
+        # Using OpenAI's updated Completion API (for v1.0.0 and above)
+        response = openai.Completion.create(
             model="gpt-3.5-turbo",  # Use GPT-3.5 as fallback (or replace with your available model)
-            messages=[
-                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
-            ]
+            prompt=f"Context:\n{context}\n\nQuestion:\n{user_query}",
+            max_tokens=2000
         )
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
-    answer = response['choices'][0]['message']['content']
+    answer = response['choices'][0]['text']
     st.chat_message("assistant").write(answer)
