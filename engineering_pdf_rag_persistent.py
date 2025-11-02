@@ -20,8 +20,8 @@ TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 # ✅ Force SentenceTransformer to use CPU (fix for Streamlit Cloud)
 model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
-# --- Access OpenAI key safely from Streamlit secrets ---
-openai.api_key = st.secrets["openai"]["api_key"]
+# ✅ Access OpenAI key safely (use st.secrets)
+client = openai  # Use the OpenAI package directly
 
 # --- Load existing data if available ---
 def load_existing_data():
@@ -102,13 +102,16 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     context = "\n\n".join(relevant_chunks)
 
     try:
-        # Using OpenAI's updated Completion API (for v1.0.0 and above)
-        response = openai.Completion.create(
-            model="gpt-4",  # Use GPT-4 or GPT-3.5 based on availability
-            prompt=f"Context:\n{context}\n\nQuestion:\n{user_query}",
-            max_tokens=2000
+        # Use OpenAI's new ChatCompletion API (after v1.0.0)
+        response = openai.chat_completions.create(
+            model="gpt-4",  # You can change to "gpt-3.5-turbo" if you're using GPT-3.5
+            messages=[
+                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
+            ]
         )
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
     answer = response['choices'][0]['message']['content']
+    st.chat_message("assistant").write(answer)
