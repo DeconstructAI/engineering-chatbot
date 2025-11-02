@@ -102,9 +102,9 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     context = "\n\n".join(relevant_chunks)
 
     try:
-        # Using OpenAI's updated ChatCompletion API (for GPT-4)
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Use GPT-4 model (you must have access to it)
+        # Using the updated API method
+        response = openai.completions.create(
+            model="gpt-3.5-turbo",  # You can switch to GPT-4 if available in your plan
             messages=[
                 {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
@@ -113,5 +113,5 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
-    answer = response['choices'][0]['message']['content']
+    answer = response['choices'][0]['message']['content']  # The format should now be aligned with the new API
     st.chat_message("assistant").write(answer)
