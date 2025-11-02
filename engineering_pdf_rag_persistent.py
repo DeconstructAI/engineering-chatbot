@@ -21,7 +21,7 @@ TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
 # ✅ Access OpenAI key safely (use st.secrets)
-openai.api_key = st.secrets["openai_api_key"]  # Ensure your key is set via Streamlit secrets
+openai.api_key = st.secrets["openai"]["api_key"]  # Ensure your key is set via Streamlit secrets
 
 # --- Load existing data if available ---
 def load_existing_data():
