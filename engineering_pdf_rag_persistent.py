@@ -111,4 +111,4 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
-    answer = response['cho]()
+    answer = response['choices'][0]['message']['content']
