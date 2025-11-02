@@ -102,7 +102,7 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     context = "\n\n".join(relevant_chunks)
 
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
