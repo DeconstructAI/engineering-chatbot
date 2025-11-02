@@ -4,9 +4,8 @@ import faiss
 import numpy as np
 import os
 import pickle
-import openai
+import openai  # Make sure to import openai properly
 import PyPDF2
-from openai.error import InvalidRequestError 
 
 # --- Settings ---
 st.set_page_config(page_title="Engineering PDF Chatbot", page_icon="⚙️")
@@ -22,7 +21,7 @@ TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
 # ✅ Access OpenAI key safely (use st.secrets)
-client = OpenAI(api_key=st.secrets["openai"]["api_key"])
+client = openai  # Use the OpenAI package directly
 
 # --- Load existing data if available ---
 def load_existing_data():
@@ -102,19 +101,19 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     relevant_chunks = retrieve_chunks(user_query)
     context = "\n\n".join(relevant_chunks)
 
-    # Try using GPT-4, fallback to GPT-3.5 if GPT-4 is not available
     try:
-        response = client.chat.completions.create(
+        # Try using GPT-4
+        response = client.ChatCompletion.create(
             model="gpt-4",  # Try using GPT-4 first
             messages=[
                 {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
             ]
         )
-    except openai.error.OpenAIError as e:  # Use the base OpenAIError for all errors
+    except openai.error.OpenAIError as e:  # Catch all OpenAI errors
         # Fallback to GPT-3.5 if GPT-4 is not available
         st.warning("⚠️ GPT-4 is unavailable, falling back to GPT-3.5...")
-        response = client.chat.completions.create(
+        response = client.ChatCompletion.create(
             model="gpt-3.5-turbo",  # Use GPT-3.5 as fallback
             messages=[
                 {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
@@ -122,5 +121,5 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
             ]
         )
 
-    answer = response.choices[0].message.content
+    answer = response["choices"][0]["message"]["content"]
     st.chat_message("assistant").write(answer)
