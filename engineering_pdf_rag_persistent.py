@@ -17,8 +17,11 @@ os.makedirs(DATA_DIR, exist_ok=True)
 EMBED_FILE = os.path.join(DATA_DIR, "embeddings.index")
 TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# ✅ Force SentenceTransformer to use CPU (fix for Streamlit Cloud)
+model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
+
+# ✅ Access OpenAI key safely (use st.secrets)
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # --- Load existing data if available ---
 def load_existing_data():
