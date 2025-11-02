@@ -101,16 +101,14 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     relevant_chunks = retrieve_chunks(user_query)
     context = "\n\n".join(relevant_chunks)
 
-    # Use GPT-3.5 (available for free plan)
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Only use GPT-3.5
-            messages=[
-                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
-            ]
+        # Using new API interface to access chat completions
+        response = openai.Completion.create(
+            model="gpt-3.5-turbo",  # Use GPT-3.5 for free-tier users
+            prompt=f"Context:\n{context}\n\nQuestion:\n{user_query}",
+            max_tokens=150  # Set a token limit if needed
         )
-        answer = response['choices'][0]['message']['content']
+        answer = response["choices"][0]["text"].strip()
     except Exception as e:
         st.error(f"Error: {str(e)}")
 
