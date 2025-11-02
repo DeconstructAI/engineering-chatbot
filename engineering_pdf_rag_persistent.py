@@ -4,7 +4,7 @@ import faiss
 import numpy as np
 import os
 import pickle
-import openai  # Make sure to import openai properly
+import openai  # Ensure openai is imported
 import PyPDF2
 
 # --- Settings ---
@@ -110,7 +110,7 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
             ]
         )
-    except openai.error.OpenAIError as e:  # Catch all OpenAI errors
+    except Exception as e:  # Catch all errors
         # Fallback to GPT-3.5 if GPT-4 is not available
         st.warning("⚠️ GPT-4 is unavailable, falling back to GPT-3.5...")
         response = client.ChatCompletion.create(
