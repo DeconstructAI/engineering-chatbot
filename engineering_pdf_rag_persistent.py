@@ -1,29 +1,38 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Force CPU mode, disable GPU for Streamlit Cloud
+
 import streamlit as st
 from sentence_transformers import SentenceTransformer
+import torch
 import faiss
 import numpy as np
-import os
 import pickle
-import openai  # Ensure openai is imported
 import PyPDF2
+import openai
 
-# --- Settings ---
+# --- Streamlit Page Setup ---
 st.set_page_config(page_title="Engineering PDF Chatbot", page_icon="⚙️")
 st.title("⚙️ Engineering Knowledge Chatbot (Persistent Version)")
 st.write("Upload PDFs once, and they’ll be remembered permanently!")
 
+# --- File Paths ---
 DATA_DIR = "data"
 os.makedirs(DATA_DIR, exist_ok=True)
 EMBED_FILE = os.path.join(DATA_DIR, "embeddings.index")
 TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 
-# ✅ Force SentenceTransformer to use CPU (fix for Streamlit Cloud)
-model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
+# --- Load Embedding Model (CPU only) ---
+st.write("🔄 Loading embedding model...")
+model = SentenceTransformer("all-MiniLM-L6-v2")
+model.to(torch.device("cpu"))
 
-# ✅ Access OpenAI key safely (use st.secrets)
-openai.api_key = st.secrets["openai"]["api_key"]  # Ensure your key is set via Streamlit secrets
+# --- OpenAI API Key (from Streamlit Secrets) ---
+# Make sure your Streamlit secrets contain:
+# [openai]
+# api_key = "your-openai-api-key"
+openai.api_key = st.secrets["openai"]["api_key"]
 
-# --- Load existing data if available ---
+# --- Load Existing Data ---
 def load_existing_data():
     if os.path.exists(EMBED_FILE) and os.path.exists(TEXT_FILE):
         with open(TEXT_FILE, "rb") as f:
@@ -36,14 +45,14 @@ def load_existing_data():
         st.session_state["knowledge"] = []
         st.session_state["index"] = None
 
-# --- Save data ---
+# --- Save Data ---
 def save_data():
     with open(TEXT_FILE, "wb") as f:
         pickle.dump(st.session_state["knowledge"], f)
     faiss.write_index(st.session_state["index"], EMBED_FILE)
     st.success("💾 Knowledge base saved permanently!")
 
-# --- PDF text extraction ---
+# --- Extract Text from PDF ---
 def extract_text_from_pdf(file):
     reader = PyPDF2.PdfReader(file)
     text = ""
@@ -51,7 +60,7 @@ def extract_text_from_pdf(file):
         text += page.extract_text() or ""
     return text
 
-# --- Retrieval ---
+# --- Retrieve Most Relevant Chunks ---
 def retrieve_chunks(query, k=3):
     if st.session_state["index"] is None:
         return ["No knowledge base found."]
@@ -59,13 +68,13 @@ def retrieve_chunks(query, k=3):
     distances, indices = st.session_state["index"].search(query_vec, k)
     return [st.session_state["knowledge"][i] for i in indices[0]]
 
-# --- Initialization ---
+# --- Initialize Memory ---
 if "knowledge" not in st.session_state:
     load_existing_data()
 
-# --- Upload PDFs ---
+# --- PDF Upload Section ---
 uploaded_files = st.file_uploader(
-    "Upload new PDF documents to add to your permanent knowledge base:",
+    "📄 Upload new PDF documents to add to your permanent knowledge base:",
     type=["pdf"],
     accept_multiple_files=True
 )
@@ -76,15 +85,13 @@ if uploaded_files:
         text = extract_text_from_pdf(pdf)
         chunks = [text[i:i+500] for i in range(0, len(text), 500)]
         new_texts.extend(chunks)
-    
-    # Combine with previous data
+
     st.session_state["knowledge"].extend(new_texts)
 
-    # Embed new chunks
+    # Create new embeddings
     st.write("🔄 Creating embeddings for new files...")
     new_embeddings = model.encode(new_texts, show_progress_bar=True).astype("float32")
 
-    # If index doesn’t exist, create one
     if st.session_state["index"] is None:
         index = faiss.IndexFlatL2(new_embeddings.shape[1])
         index.add(new_embeddings)
@@ -102,18 +109,25 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     context = "\n\n".join(relevant_chunks)
 
     try:
-        # Using OpenAI's updated Chat API (for version 1.0.0+)
+        # ✅ Compatible with openai==0.28.0
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # You can switch to "gpt-3.5-turbo" if needed
+            model="gpt-4",  # or "gpt-3.5-turbo"
             messages=[
-                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
-            ]
+                {
+                    "role": "system",
+                    "content": "You are an expert engineering assistant. Use the provided context to answer accurately."
+                },
+                {
+                    "role": "user",
+                    "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"
+                }
+            ],
+            max_tokens=1000,
+            temperature=0.2,
         )
-        
-        # Accessing the answer correctly from the API response
-        answer = response['choices'][0]['message']['content']
+
+        answer = response["choices"][0]["message"]["content"]
         st.chat_message("assistant").write(answer)
-    
+
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
