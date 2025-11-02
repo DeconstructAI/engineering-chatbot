@@ -72,4 +72,48 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     new_texts = []
-    for pdf in uploaded
+    for pdf in uploaded_files:
+        text = extract_text_from_pdf(pdf)
+        chunks = [text[i:i+500] for i in range(0, len(text), 500)]
+        new_texts.extend(chunks)
+    
+    # Combine with previous data
+    st.session_state["knowledge"].extend(new_texts)
+
+    # Embed new chunks
+    st.write("🔄 Creating embeddings for new files...")
+    new_embeddings = model.encode(new_texts, show_progress_bar=True).astype("float32")
+
+    # If index doesn’t exist, create one
+    if st.session_state["index"] is None:
+        index = faiss.IndexFlatL2(new_embeddings.shape[1])
+        index.add(new_embeddings)
+        st.session_state["index"] = index
+    else:
+        st.session_state["index"].add(new_embeddings)
+
+    save_data()
+
+# --- Chat Interface ---
+if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
+    st.chat_message("user").write(user_query)
+
+    relevant_chunks = retrieve_chunks(user_query)
+    context = "\n\n".join(relevant_chunks)
+
+    try:
+        # Using OpenAI's updated ChatCompletion API (for v1.0.0 and above)
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # You can change to "gpt-3.5-turbo" if you're using GPT-3.5
+            messages=[
+                {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"}
+            ]
+        )
+        
+        # Accessing the answer correctly from the API response
+        answer = response['choices'][0]['message']['content']
+        st.chat_message("assistant").write(answer)
+    
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
