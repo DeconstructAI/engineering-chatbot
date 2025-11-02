@@ -102,8 +102,8 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
     context = "\n\n".join(relevant_chunks)
 
     try:
-        # Use OpenAI's new ChatCompletion API (after v1.0.0)
-        response = openai.chat_completions.create(
+        # Using OpenAI's updated ChatCompletion API (for v1.0.0 and above)
+        response = openai.ChatCompletion.create(
             model="gpt-4",  # You can change to "gpt-3.5-turbo" if you're using GPT-3.5
             messages=[
                 {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
