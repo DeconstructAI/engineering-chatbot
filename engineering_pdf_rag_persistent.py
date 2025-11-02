@@ -103,7 +103,7 @@ if user_query := st.chat_input("Ask a question about your engineering PDFs..."):
 
     try:
         # Using the correct method for OpenAI v1.0.0 or later
-        response = client.chat.Completion.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",  # Use GPT-3.5 as fallback (or replace with your available model)
             messages=[
                 {"role": "system", "content": "You are an expert engineering assistant. Use the context to answer accurately."},
