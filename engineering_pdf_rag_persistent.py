@@ -1,17 +1,26 @@
+# =====================================
+# ⚙️ Engineering PDF Chatbot (Persistent)
+# =====================================
+
+# 🆕 --- SSL FIX START ---
+import os, ssl, certifi
+
+# Ensure HTTPS requests and downloads use valid certificates (fixes SSL errors)
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+
+# Optional fallback for strict corporate networks (bypass SSL verification)
+ssl._create_default_https_context = ssl._create_unverified_context
+# 🆕 --- SSL FIX END ---
+
 import streamlit as st
 from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
-import os
 import pickle
 import torch
 from openai import OpenAI
 import PyPDF2
-
-# 🆕 --- SSL FIX START ---
-import certifi
-os.environ['SSL_CERT_FILE'] = certifi.where()
-# 🆕 --- SSL FIX END ---
 
 # -------------------------------
 # 🧠 Streamlit Page Configuration
@@ -29,15 +38,15 @@ EMBED_FILE = os.path.join(DATA_DIR, "embeddings.index")
 TEXT_FILE = os.path.join(DATA_DIR, "texts.pkl")
 
 # -------------------------------
-# 🧠 Load SentenceTransformer safely for Streamlit Cloud
+# 🧠 Load SentenceTransformer safely
 # -------------------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
 model = model.to(torch.device("cpu"))
 for param in model.parameters():
-    param.data = param.data.float()  # avoid NotImplementedError on Streamlit Cloud
+    param.data = param.data.float()  # avoids NotImplementedError on Streamlit Cloud
 
 # -------------------------------
-# 🔑 Initialize OpenAI Client (new syntax)
+# 🔑 Initialize OpenAI Client
 # -------------------------------
 # Make sure your .streamlit/secrets.toml has:
 # [openai]
