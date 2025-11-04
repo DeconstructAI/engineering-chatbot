@@ -8,6 +8,11 @@ import torch
 from openai import OpenAI
 import PyPDF2
 
+# 🆕 --- SSL FIX START ---
+import certifi
+os.environ['SSL_CERT_FILE'] = certifi.where()
+# 🆕 --- SSL FIX END ---
+
 # -------------------------------
 # 🧠 Streamlit Page Configuration
 # -------------------------------
